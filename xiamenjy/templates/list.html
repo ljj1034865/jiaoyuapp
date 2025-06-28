@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+
+{% block title %}家教订单列表{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">家教订单列表</h1>
+    <div>
+        <button class="btn btn-outline-primary me-2" id="refreshBtn">
+            <i class="fas fa-sync-alt me-1"></i>刷新
+        </button>
+        {% if session.admin_id %}
+        <a href="/admin" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>添加订单
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h5 class="card-title mb-3">
+            <i class="fas fa-filter me-2"></i>区域筛选
+        </h5>
+        <div class="d-flex flex-wrap gap-2" id="district-filters">
+            <button class="btn btn-outline-primary active filter-btn" data-district="all">全部区域</button>
+            <button class="btn btn-outline-primary filter-btn" data-district="siming">思明区</button>
+            <button class="btn btn-outline-primary filter-btn" data-district="huli">湖里区</button>
+            <button class="btn btn-outline-primary filter-btn" data-district="jimei">集美区</button>
+            <button class="btn btn-outline-primary filter-btn" data-district="haicang">海沧区</button>
+            <button class="btn btn-outline-primary filter-btn" data-district="tongan">同安区</button>
+            <button class="btn btn-outline-primary filter-btn" data-district="xiangan">翔安区</button>
+        </div>
+    </div>
+</div>
+
+<div class="row" id="jobs-container">
+    <div class="col-12 text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">加载中...</span>
+        </div>
+        <p class="mt-2">正在加载家教信息...</p>
+    </div>
+</div>
+
+<div class="d-flex justify-content-center mt-4">
+    <nav>
+        <ul class="pagination" id="pagination"></ul>
+    </nav>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 区域名称映射
+const districtNames = {
+    "all": "全部区域",
+    "siming": "思明区",
+    "huli": "湖里区",
+    "jimei": "集美区",
+    "haicang": "海沧区",
+    "tongan": "同安区",
+    "xiangan": "翔安区"
+};
+
+// 全局状态
+let currentPage = 1;
+const perPage = 6;
+let currentDistrict = 'all';
+let totalJobs = 0;
+
+document.addEventListener('DOMContentLoaded', () => {
+    // 初始化页面
+    loadJobs();
+    
+    // 筛选按钮事件
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.filter-btn').forEach(b => {
+                b.classList.remove('active');
+            });
+            this.classList.add('active');
+            
+            currentDistrict = this.dataset.district;
+            currentPage = 1;
+            loadJobs();
+        });
+    });
+    
+    // 刷新按钮事件
+    document.getElementById('refreshBtn').addEventListener('click', () => {
+        loadJobs();
+    });
+});
+
+// 加载订单数据
+async function loadJobs() {
+    const container = document.getElementById('jobs-container');
+    container.innerHTML = `
+        <div class="col-12 text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2">正在加载家教信息...</p>
+        </div>
+    `;
+    
+    try {
+        const response = await fetch(`/api/jobs?district=${currentDistrict}&page=${currentPage}&per_page=${perPage}`);
+        if (!response.ok) throw new Error('获取数据失败');
+        
+        const data = await response.json();
+        if (!data.success) throw new Error(data.error || '未知错误');
+        
+        totalJobs = data.total;
+        renderJobs(data.jobs);
+        renderPagination();
+    } catch (error) {
+        container.innerHTML = `
+            <div class="col-12">
+                <div class="alert alert-danger">加载失败: ${error.message}</div>
+            </div>
+        `;
+    }
+}
+
+// 渲染订单列表
+function renderJobs(jobs) {
+    const container = document.getElementById('jobs-container');
+    
+    if (jobs.length === 0) {
+        container.innerHTML = `
+            <div class="col-12">
+                <div class="alert alert-info text-center py-4">
+                    <i class="fas fa-info-circle fa-2x mb-3"></i>
+                    <h4>没有找到家教订单</h4>
+                    <p class="mb-0">当前筛选条件下没有找到家教订单，请尝试其他筛选条件</p>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = '';
+    
+    jobs.forEach(job => {
+        const jobCard = document.createElement('div');
+        jobCard.className = 'col-md-6 mb-4';
+        jobCard.innerHTML = `
+            <div class="card h-100 shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span class="badge bg-primary">${job.category}</span>
+                    <small class="text-muted">${job.date}</small>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">${job.title}</h5>
+                    
+                    <div class="mb-3">
+                        <span class="badge bg-secondary">${districtNames[job.district]}</span>
+                        <span class="ms-2"><i class="fas fa-map-marker-alt text-primary me-1"></i>${job.location}</span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <p class="mb-1"><i class="fas fa-graduation-cap text-info me-2"></i>${job.grade} ${job.subject}</p>
+                        <p class="mb-0"><i class="fas fa-money-bill-wave text-success me-2"></i>${job.salary}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">家教要求：</h6>
+                        <p class="card-text">${job.requirements}</p>
+                    </div>
+                </div>
+                <div class="card-footer bg-white d-flex justify-content-between">
+                    <span class="text-primary fw-bold">
+                        <i class="fas fa-phone-alt me-1"></i>${job.contact}
+                    </span>
+                    <button class="btn btn-sm btn-outline-primary copy-btn" data-job-id="${job.id}">
+                        <i class="fas fa-copy me-1"></i>复制信息
+                    </button>
+                </div>
+            </div>
+        `;
+        container.appendChild(jobCard);
+    });
+    
+    // 添加复制按钮事件
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const jobId = this.dataset.jobId;
+            const job = jobs.find(j => j.id == jobId);
+            if (job) {
+                copyJobInfo(job);
+            }
+        });
+    });
+}
+
+// 渲染分页
+function renderPagination() {
+    const totalPages = Math.ceil(totalJobs / perPage);
+    const pagination = document.getElementById('pagination');
+    
+    if (totalPages <= 1) {
+        pagination.innerHTML = '';
+        return;
+    }
+    
+    let html = '';
+    
+    // 上一页按钮
+    html += `
+        <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" data-page="${currentPage - 1}">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+        </li>
+    `;
+    
+    // 页码
+    for (let i = 1; i <= totalPages; i++) {
+        html += `
+            <li class="page-item ${i === currentPage ? 'active' : ''}">
+                <a class="page-link" href="#" data-page="${i}">${i}</a>
+            </li>
+        `;
+    }
+    
+    // 下一页按钮
+    html += `
+        <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+            <a class="page-link" href="#" data-page="${currentPage + 1}">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </li>
+    `;
+    
+    pagination.innerHTML = html;
+    
+    // 添加分页事件
+    document.querySelectorAll('.page-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const page = parseInt(this.dataset.page);
+            if (page >= 1 && page <= totalPages && page !== currentPage) {
+                currentPage = page;
+                loadJobs();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        });
+    });
+}
+
+// 复制订单信息
+function copyJobInfo(job) {
+    const jobInfo = `【家教招聘信息】\n标题：${job.title}\n区域：${districtNames[job.district]} - ${job.location}\n科目/年级：${job.grade} ${job.subject}\n家教要求：${job.requirements}\n薪资：${job.salary}\n联系方式：${job.contact}\n发布日期：${job.date}\n详细说明：${job.details}`;
+
+    navigator.clipboard.writeText(jobInfo).then(() => {
+        showToast('复制成功', '订单信息已复制到剪贴板', 'success');
+    }).catch(err => {
+        console.error('复制失败:', err);
+        showToast('复制失败', '无法复制内容，请重试', 'danger');
+    });
+}
+</script>
+{% endblock %}

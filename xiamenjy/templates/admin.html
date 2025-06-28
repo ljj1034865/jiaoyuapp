@@ -1,0 +1,584 @@
+{% extends "base.html" %}
+
+{% block title %}管理后台{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-0">管理后台</h1>
+        <p class="text-muted mb-0">欢迎回来，{{ session.get('username', '管理员') }}</p>
+    </div>
+    <div>
+        <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#addJobModal">
+            <i class="fas fa-plus me-1"></i>添加订单
+        </button>
+        <button class="btn btn-outline-danger" id="logoutBtn">
+            <i class="fas fa-sign-out-alt me-1"></i>退出登录
+        </button>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h5 class="card-title mb-3">
+            <i class="fas fa-filter me-2"></i>区域筛选
+        </h5>
+        <div class="d-flex flex-wrap gap-2" id="district-filters">
+            <button class="btn btn-outline-primary active filter-btn" data-district="all">全部区域</button>
+            <button class="btn btn-outline-primary filter-btn" data-district="siming">思明区</button>
+            <button class="btn btn-outline-primary filter-btn" data-district="huli">湖里区</button>
+            <button class="btn btn-outline-primary filter-btn" data-district="jimei">集美区</button>
+            <button class="btn btn-outline-primary filter-btn" data-district="haicang">海沧区</button>
+            <button class="btn btn-outline-primary filter-btn" data-district="tongan">同安区</button>
+            <button class="btn btn-outline-primary filter-btn" data-district="xiangan">翔安区</button>
+        </div>
+    </div>
+</div>
+
+<div class="row" id="jobs-container">
+    <div class="col-12 text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">加载中...</span>
+        </div>
+        <p class="mt-2">正在加载家教信息...</p>
+    </div>
+</div>
+
+<!-- 添加订单模态框 -->
+<div class="modal fade" id="addJobModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">添加家教订单</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addJobForm">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="addTitle" class="form-label">订单标题</label>
+                            <input type="text" class="form-control" id="addTitle" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="addDistrict" class="form-label">区域</label>
+                            <select class="form-select" id="addDistrict" required>
+                                <option value="siming">思明区</option>
+                                <option value="huli">湖里区</option>
+                                <option value="jimei">集美区</option>
+                                <option value="haicang">海沧区</option>
+                                <option value="tongan">同安区</option>
+                                <option value="xiangan">翔安区</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="addCategory" class="form-label">类别</label>
+                            <select class="form-select" id="addCategory" required>
+                                <option value="小学教育">小学教育</option>
+                                <option value="初中教育">初中教育</option>
+                                <option value="高中教育">高中教育</option>
+                                <option value="特长教育">特长教育</option>
+                                <option value="艺术教育">艺术教育</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="addGrade" class="form-label">年级</label>
+                            <input type="text" class="form-control" id="addGrade" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="addSubject" class="form-label">科目</label>
+                            <input type="text" class="form-control" id="addSubject" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="addSalary" class="form-label">薪资</label>
+                            <input type="text" class="form-control" id="addSalary" required>
+                        </div>
+                        <div class="col-12">
+                            <label for="addLocation" class="form-label">上课地点</label>
+                            <input type="text" class="form-control" id="addLocation" required>
+                        </div>
+                        <div class="col-12">
+                            <label for="addRequirements" class="form-label">家教要求</label>
+                            <textarea class="form-control" id="addRequirements" rows="3" required></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label for="addContact" class="form-label">联系方式</label>
+                            <input type="text" class="form-control" id="addContact" required>
+                        </div>
+                        <div class="col-12">
+                            <label for="addDetails" class="form-label">详细说明</label>
+                            <textarea class="form-control" id="addDetails" rows="3" required></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">添加订单</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑订单模态框 -->
+<div class="modal fade" id="editJobModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">编辑家教订单</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editJobForm">
+                <div class="modal-body">
+                    <input type="hidden" id="editJobId">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="editTitle" class="form-label">订单标题</label>
+                            <input type="text" class="form-control" id="editTitle" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editDistrict" class="form-label">区域</label>
+                            <select class="form-select" id="editDistrict" required>
+                                <option value="siming">思明区</option>
+                                <option value="huli">湖里区</option>
+                                <option value="jimei">集美区</option>
+                                <option value="haicang">海沧区</option>
+                                <option value="tongan">同安区</option>
+                                <option value="xiangan">翔安区</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editCategory" class="form-label">类别</label>
+                            <select class="form-select" id="editCategory" required>
+                                <option value="小学教育">小学教育</option>
+                                <option value="初中教育">初中教育</option>
+                                <option value="高中教育">高中教育</option>
+                                <option value="特长教育">特长教育</option>
+                                <option value="艺术教育">艺术教育</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editGrade" class="form-label">年级</label>
+                            <input type="text" class="form-control" id="editGrade" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editSubject" class="form-label">科目</label>
+                            <input type="text" class="form-control" id="editSubject" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editSalary" class="form-label">薪资</label>
+                            <input type="text" class="form-control" id="editSalary" required>
+                        </div>
+                        <div class="col-12">
+                            <label for="editLocation" class="form-label">上课地点</label>
+                            <input type="text" class="form-control" id="editLocation" required>
+                        </div>
+                        <div class="col-12">
+                            <label for="editRequirements" class="form-label">家教要求</label>
+                            <textarea class="form-control" id="editRequirements" rows="3" required></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label for="editContact" class="form-label">联系方式</label>
+                            <input type="text" class="form-control" id="editContact" required>
+                        </div>
+                        <div class="col-12">
+                            <label for="editDetails" class="form-label">详细说明</label>
+                            <textarea class="form-control" id="editDetails" rows="3" required></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">保存修改</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 区域名称映射
+const districtNames = {
+    "all": "全部区域",
+    "siming": "思明区",
+    "huli": "湖里区",
+    "jimei": "集美区",
+    "haicang": "海沧区",
+    "tongan": "同安区",
+    "xiangan": "翔安区"
+};
+
+// 全局状态
+let currentJobs = [];
+let currentDistrict = 'all';
+
+document.addEventListener('DOMContentLoaded', () => {
+    // 检查登录状态
+    checkLoginStatus();
+    
+    // 初始化页面
+    loadJobs();
+    
+    // 筛选按钮事件
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.filter-btn').forEach(b => {
+                b.classList.remove('active');
+            });
+            this.classList.add('active');
+            
+            currentDistrict = this.dataset.district;
+            loadJobs();
+        });
+    });
+    
+    // 退出登录事件
+    document.getElementById('logoutBtn').addEventListener('click', logout);
+    
+    // 添加订单表单事件
+    document.getElementById('addJobForm').addEventListener('submit', addJob);
+    
+    // 编辑订单表单事件
+    document.getElementById('editJobForm').addEventListener('submit', updateJob);
+});
+
+// 检查登录状态
+async function checkLoginStatus() {
+    try {
+        const response = await fetch('/api/check_login', {
+            credentials: 'include'
+        });
+        
+        if (!response.ok) throw new Error('登录状态检查失败');
+        
+        const data = await response.json();
+        if (!data.logged_in) {
+            showToast('请登录', '请先登录管理员账号', 'warning');
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 1500);
+        }
+    } catch (error) {
+        console.error('登录状态检查错误:', error);
+        showToast('登录状态错误', '无法验证登录状态，请重新登录', 'danger');
+        setTimeout(() => {
+            window.location.href = '/login';
+        }, 1500);
+    }
+}
+
+// 加载订单数据
+async function loadJobs() {
+    const container = document.getElementById('jobs-container');
+    container.innerHTML = `
+        <div class="col-12 text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2">正在加载家教信息...</p>
+        </div>
+    `;
+    
+    try {
+        const response = await fetch(`/api/jobs?district=${currentDistrict}`);
+        if (!response.ok) throw new Error('获取数据失败');
+        
+        const data = await response.json();
+        if (!data.success) throw new Error(data.error || '未知错误');
+        
+        currentJobs = data.jobs;
+        renderJobs(currentJobs);
+    } catch (error) {
+        container.innerHTML = `
+            <div class="col-12">
+                <div class="alert alert-danger">加载失败: ${error.message}</div>
+            </div>
+        `;
+    }
+}
+
+// 渲染订单列表
+function renderJobs(jobs) {
+    const container = document.getElementById('jobs-container');
+    
+    if (jobs.length === 0) {
+        container.innerHTML = `
+            <div class="col-12">
+                <div class="alert alert-info text-center py-4">
+                    <i class="fas fa-info-circle fa-2x mb-3"></i>
+                    <h4>没有找到家教订单</h4>
+                    <p class="mb-0">当前筛选条件下没有找到家教订单，请尝试其他筛选条件</p>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = '';
+    
+    jobs.forEach(job => {
+        const jobCard = document.createElement('div');
+        jobCard.className = 'col-md-6 mb-4';
+        jobCard.innerHTML = `
+            <div class="card h-100 shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span class="badge bg-primary">${job.category}</span>
+                    <small class="text-muted">${job.date}</small>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">${job.title}</h5>
+                    
+                    <div class="mb-3">
+                        <span class="badge bg-secondary">${districtNames[job.district]}</span>
+                        <span class="ms-2"><i class="fas fa-map-marker-alt text-primary me-1"></i>${job.location}</span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <p class="mb-1"><i class="fas fa-graduation-cap text-info me-2"></i>${job.grade} ${job.subject}</p>
+                        <p class="mb-0"><i class="fas fa-money-bill-wave text-success me-2"></i>${job.salary}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">家教要求：</h6>
+                        <p class="card-text">${job.requirements}</p>
+                    </div>
+                </div>
+                <div class="card-footer bg-white d-flex justify-content-between">
+                    <span class="text-primary fw-bold">
+                        <i class="fas fa-phone-alt me-1"></i>${job.contact}
+                    </span>
+                    <div>
+                        <button class="btn btn-sm btn-outline-primary copy-btn me-2" data-job-id="${job.id}">
+                            <i class="fas fa-copy me-1"></i>复制
+                        </button>
+                        <button class="btn btn-sm btn-outline-success edit-btn me-2" data-job-id="${job.id}">
+                            <i class="fas fa-edit me-1"></i>编辑
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger delete-btn" data-job-id="${job.id}">
+                            <i class="fas fa-trash me-1"></i>删除
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.appendChild(jobCard);
+    });
+    
+    // 添加按钮事件
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const jobId = this.dataset.jobId;
+            const job = jobs.find(j => j.id == jobId);
+            if (job) {
+                copyJobInfo(job);
+            }
+        });
+    });
+    
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const jobId = this.dataset.jobId;
+            const job = jobs.find(j => j.id == jobId);
+            if (job) {
+                openEditModal(job);
+            }
+        });
+    });
+    
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const jobId = this.dataset.jobId;
+            const job = jobs.find(j => j.id == jobId);
+            if (job) {
+                deleteJob(jobId, job.title);
+            }
+        });
+    });
+}
+
+// 打开编辑模态框
+function openEditModal(job) {
+    // 填充表单数据
+    document.getElementById('editJobId').value = job.id;
+    document.getElementById('editTitle').value = job.title;
+    document.getElementById('editDistrict').value = job.district;
+    document.getElementById('editCategory').value = job.category;
+    document.getElementById('editGrade').value = job.grade;
+    document.getElementById('editSubject').value = job.subject;
+    document.getElementById('editSalary').value = job.salary;
+    document.getElementById('editLocation').value = job.location;
+    document.getElementById('editRequirements').value = job.requirements;
+    document.getElementById('editContact').value = job.contact;
+    document.getElementById('editDetails').value = job.details;
+    
+    // 显示模态框
+    const modal = new bootstrap.Modal(document.getElementById('editJobModal'));
+    modal.show();
+}
+
+// 添加新订单
+async function addJob(e) {
+    e.preventDefault();
+    
+    // 获取表单数据
+    const jobData = {
+        title: document.getElementById('addTitle').value,
+        district: document.getElementById('addDistrict').value,
+        category: document.getElementById('addCategory').value,
+        grade: document.getElementById('addGrade').value,
+        subject: document.getElementById('addSubject').value,
+        salary: document.getElementById('addSalary').value,
+        location: document.getElementById('addLocation').value,
+        requirements: document.getElementById('addRequirements').value,
+        contact: document.getElementById('addContact').value,
+        details: document.getElementById('addDetails').value
+    };
+    
+    try {
+        const response = await fetch('/api/jobs', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(jobData),
+            credentials: 'include'
+        });
+        
+        if (!response.ok) throw new Error('添加失败');
+        
+        const data = await response.json();
+        if (data.success) {
+            // 关闭模态框
+            bootstrap.Modal.getInstance(document.getElementById('addJobModal')).hide();
+            
+            // 刷新列表
+            loadJobs();
+            
+            // 显示成功消息
+            showToast('添加成功', '新订单已成功添加', 'success');
+            
+            // 清空表单
+            document.getElementById('addJobForm').reset();
+        } else {
+            throw new Error(data.error || '未知错误');
+        }
+    } catch (error) {
+        console.error('添加订单错误:', error);
+        showToast('添加失败', error.message || '添加订单时出错', 'danger');
+    }
+}
+
+// 更新订单
+async function updateJob(e) {
+    e.preventDefault();
+    
+    const jobId = document.getElementById('editJobId').value;
+    const jobData = {
+        title: document.getElementById('editTitle').value,
+        district: document.getElementById('editDistrict').value,
+        category: document.getElementById('editCategory').value,
+        grade: document.getElementById('editGrade').value,
+        subject: document.getElementById('editSubject').value,
+        salary: document.getElementById('editSalary').value,
+        location: document.getElementById('editLocation').value,
+        requirements: document.getElementById('editRequirements').value,
+        contact: document.getElementById('editContact').value,
+        details: document.getElementById('editDetails').value
+    };
+    
+    try {
+        const response = await fetch(`/api/jobs/${jobId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(jobData),
+            credentials: 'include'
+        });
+        
+        if (!response.ok) throw new Error('更新失败');
+        
+        const data = await response.json();
+        if (data.success) {
+            // 关闭模态框
+            bootstrap.Modal.getInstance(document.getElementById('editJobModal')).hide();
+            
+            // 刷新列表
+            loadJobs();
+            
+            // 显示成功消息
+            showToast('更新成功', '订单已成功更新', 'success');
+        } else {
+            throw new Error(data.error || '未知错误');
+        }
+    } catch (error) {
+        console.error('更新订单错误:', error);
+        showToast('更新失败', error.message || '更新订单时出错', 'danger');
+    }
+}
+
+// 删除订单
+async function deleteJob(jobId, jobTitle) {
+    if (!confirm(`确定要删除订单 "${jobTitle}" 吗？此操作不可撤销。`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/jobs/${jobId}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+        
+        if (!response.ok) throw new Error('删除失败');
+        
+        const data = await response.json();
+        if (data.success) {
+            // 刷新列表
+            loadJobs();
+            
+            // 显示成功消息
+            showToast('删除成功', '订单已成功删除', 'success');
+        } else {
+            throw new Error(data.error || '未知错误');
+        }
+    } catch (error) {
+        console.error('删除订单错误:', error);
+        showToast('删除失败', error.message || '删除订单时出错', 'danger');
+    }
+}
+
+// 退出登录
+async function logout() {
+    try {
+        const response = await fetch('/api/logout', {
+            method: 'POST',
+            credentials: 'include'
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            showToast('已退出', '您已成功退出登录', 'success');
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 1500);
+        } else {
+            throw new Error('退出登录失败');
+        }
+    } catch (error) {
+        console.error('退出登录错误:', error);
+        showToast('退出失败', '退出登录时出错，请重试', 'danger');
+    }
+}
+
+// 复制订单信息
+function copyJobInfo(job) {
+    const jobInfo = `【家教招聘信息】\n标题：${job.title}\n区域：${districtNames[job.district]} - ${job.location}\n科目/年级：${job.grade} ${job.subject}\n家教要求：${job.requirements}\n薪资：${job.salary}\n联系方式：${job.contact}\n发布日期：${job.date}\n详细说明：${job.details}`;
+
+    navigator.clipboard.writeText(jobInfo).then(() => {
+        showToast('复制成功', '订单信息已复制到剪贴板', 'success');
+    }).catch(err => {
+        console.error('复制失败:', err);
+        showToast('复制失败', '无法复制内容，请重试', 'danger');
+    });
+}
+</script>
+{% endblock %}

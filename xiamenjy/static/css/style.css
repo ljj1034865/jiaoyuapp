@@ -1,0 +1,113 @@
+:root {
+    --primary-color: #4361ee;
+    --secondary-color: #3a0ca3;
+    --accent-color: #4cc9f0;
+    --light-color: #f5f7fa;
+    --dark-color: #2b2d42;
+}
+
+body {
+    font-family: 'Microsoft YaHei', sans-serif;
+    background-color: #f8f9fa;
+    color: #333;
+    padding-top: 56px;
+}
+
+/* 导航栏 */
+.navbar {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* 英雄区域 */
+.hero-section {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border-radius: 10px;
+}
+
+/* 卡片样式 */
+.card {
+    border: none;
+    border-radius: 10px;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* 图标圆环 */
+.icon-circle {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 页脚 */
+.footer {
+    background-color: var(--dark-color);
+    padding: 3rem 0;
+    margin-top: 3rem;
+}
+
+.footer a {
+    color: #ddd;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.footer a:hover {
+    color: white;
+    text-decoration: underline;
+}
+
+/* 提示框 */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1050;
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.toast-header {
+    background-color: rgba(0, 0, 0, 0.85);
+    color: white;
+    border-bottom: none;
+}
+
+.toast-body {
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+}
+
+/* 工具类 */
+.shadow-sm {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.rounded-3 {
+    border-radius: 0.75rem;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .hero-section .col-md-6:last-child {
+        margin-top: 2rem;
+    }
+    
+    .navbar .d-flex {
+        margin-top: 1rem;
+        width: 100%;
+    }
+}
